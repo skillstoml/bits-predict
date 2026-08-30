@@ -1,0 +1,25 @@
+FROM golang:1.26.4-alpine3.22 AS builder
+
+WORKDIR /src
+COPY backend/go.mod backend/go.sum ./
+RUN go mod download
+COPY backend/ .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /app/server .
+
+FROM alpine:3.24.1
+
+RUN addgroup -S app && adduser -S -G app app \
+	&& mkdir -p /data/socialpredict/uploads/social-share \
+	&& chown -R app:app /data/socialpredict
+COPY --from=builder /app/server /usr/local/bin/server
+RUN chown app:app /usr/local/bin/server
+USER app
+
+# Hugging Face Spaces maps port 7860 by default
+ENV BACKEND_PORT=7860
+EXPOSE 7860
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+	CMD wget -q -O - "http://127.0.0.1:${BACKEND_PORT:-7860}/health" | grep -qx live
+
+ENTRYPOINT ["/usr/local/bin/server"]
