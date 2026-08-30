@@ -99,6 +99,18 @@ func buildRouter(openAPISpec []byte, swaggerUIFS fs.FS, db *gorm.DB, configServi
 
 	router := mux.NewRouter()
 	router.MethodNotAllowedHandler = methodNotAllowedHandler(router)
+	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/v0/") {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"ok":     false,
+				"reason": "route not found",
+			})
+			return
+		}
+		http.NotFound(w, r)
+	})
 	if err := registerInfraRoutes(router, openAPISpec, swaggerUIFS, db, readiness, operationalMetrics); err != nil {
 		return nil, err
 	}
@@ -396,6 +408,7 @@ func registerApplicationRoutes(router *mux.Router, db *gorm.DB, configService co
 
 	router.HandleFunc("/v0/home", handlers.HomeHandler).Methods("GET")
 	router.Handle("/v0/login", loginSecurityMiddleware(authsvc.LoginHandler(usersRepo, requestSecurityService, securityConfig.JWTSigningKey))).Methods("POST")
+	router.Handle("/v0/signup", loginSecurityMiddleware(authsvc.SignupHandler(db, configService))).Methods("POST")
 
 	// application setup information
 	router.Handle("/v0/setup", securityMiddleware(http.HandlerFunc(setuphandlers.GetSetupHandler(container.GetConfigService())))).Methods("GET")

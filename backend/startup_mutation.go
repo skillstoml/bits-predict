@@ -14,11 +14,12 @@ type startupMutationHooks struct {
 	verify       func(*gorm.DB) error
 	seedUsers    func(*gorm.DB, configsvc.Service) error
 	seedHomepage func(*gorm.DB, string) error
+	seedMarkets  func(*gorm.DB) error
 }
 
 func runStartupMutations(db *gorm.DB, configService configsvc.Service, mode appruntime.StartupMutationMode, hooks startupMutationHooks) error {
 	if mode.Writer {
-		if hooks.migrate == nil || hooks.seedUsers == nil || hooks.seedHomepage == nil {
+		if hooks.migrate == nil || hooks.seedUsers == nil || hooks.seedHomepage == nil || hooks.seedMarkets == nil {
 			return fmt.Errorf("startup writer hooks unavailable")
 		}
 		if err := hooks.migrate(db); err != nil {
@@ -29,6 +30,9 @@ func runStartupMutations(db *gorm.DB, configService configsvc.Service, mode appr
 		}
 		if err := hooks.seedHomepage(db, "."); err != nil {
 			return fmt.Errorf("seed homepage: %w", err)
+		}
+		if err := hooks.seedMarkets(db); err != nil {
+			return fmt.Errorf("seed BITS Pilani markets: %w", err)
 		}
 		return nil
 	}

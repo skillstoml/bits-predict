@@ -120,6 +120,7 @@ x-route-family-migration-matrix:
     - family: auth
       paths:
         - /v0/login
+        - /v0/signup
       success_contract: JSON `{ok:true,result}`
       failure_contract: ReasonResponse
       migration_state: envelope_based
@@ -397,6 +398,58 @@ paths:
                 $ref: '#/components/schemas/ReasonResponse'
         '429':
           description: Login rate limit exceeded by middleware. Other protected routes can also return middleware-level 429 responses as described in the API description.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReasonResponse'
+
+  /v0/signup:
+    post:
+      tags: [Auth]
+      operationId: signupUser
+      summary: Register a new user
+      description: >
+        Creates a new user account. Enforces that email belongs to the BITS Pilani domain.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, email, password]
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  username:
+                    type: string
+        '400':
+          description: Invalid inputs or domain mismatch.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReasonResponse'
+        '409':
+          description: Username or email already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReasonResponse'
+        '500':
+          description: Database write or hashing failed.
           content:
             application/json:
               schema:

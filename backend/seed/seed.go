@@ -138,3 +138,135 @@ func SeedHomepage(db *gorm.DB, repoRoot string) error {
 
 	return db.Create(&item).Error
 }
+
+func SeedMarkets(db *gorm.DB) error {
+	// 1. Check if the markets are already seeded
+	var count int64
+	if err := db.Model(&models.MarketGroup{}).Where("question_title LIKE ?", "%BITS Pilani%").Count(&count).Error; err != nil {
+		return fmt.Errorf("checking market groups: %w", err)
+	}
+	if count > 0 {
+		logger.LogInfo("Seed", "SeedMarkets", "BITS Pilani markets already seeded.")
+		return nil
+	}
+
+	// 2. We need an admin user to own the markets
+	var adminCount int64
+	if err := db.Model(&models.User{}).Where("username = ?", "admin").Count(&adminCount).Error; err != nil {
+		return fmt.Errorf("checking admin user: %w", err)
+	}
+	if adminCount == 0 {
+		return fmt.Errorf("admin user not found, seed users first")
+	}
+
+	now := time.Now()
+	resolutionTime := now.AddDate(0, 1, 0) // 1 month in the future
+
+	// Create President Election Group
+	prezGroup := models.MarketGroup{
+		QuestionTitle:      "Who will be elected BITS Pilani SU President?",
+		Description:        "This market group resolves to the candidate who wins the BITS Pilani Student Union President election.",
+		GroupType:          "MULTIPLE_CHOICE_BINARY",
+		ProbabilityPolicy:  "INDEPENDENT_BINARY",
+		ResolutionPolicy:   "INDEPENDENT_CHILDREN",
+		LifecycleStatus:    "published",
+		ProposalCost:       0,
+		CreatorUsername:    "admin",
+		StewardUsername:    "admin",
+		ApprovedBy:         "admin",
+		ApprovedAt:         &now,
+		ResolutionDateTime: resolutionTime,
+	}
+
+	if err := db.Create(&prezGroup).Error; err != nil {
+		return fmt.Errorf("creating prez market group: %w", err)
+	}
+
+	prezCandidates := []string{"Candidate A", "Candidate B", "Candidate C", "None of the Above"}
+	for i, name := range prezCandidates {
+		childMarket := models.Market{
+			QuestionTitle:      fmt.Sprintf("Who will be elected BITS Pilani SU President? - %s", name),
+			Description:        fmt.Sprintf("Will %s win the BITS Pilani Student Union President election?", name),
+			OutcomeType:        "BINARY",
+			ResolutionDateTime: resolutionTime,
+			IsResolved:         false,
+			InitialProbability: 0.5,
+			YesLabel:           "YES",
+			NoLabel:            "NO",
+			LifecycleStatus:    "published",
+			ApprovedBy:         "admin",
+			ApprovedAt:         &now,
+			CreatorUsername:    "admin",
+			StewardUsername:    "admin",
+		}
+		if err := db.Create(&childMarket).Error; err != nil {
+			return fmt.Errorf("creating prez child market %s: %w", name, err)
+		}
+
+		member := models.MarketGroupMember{
+			GroupID:      prezGroup.ID,
+			MarketID:     childMarket.ID,
+			AnswerLabel:  name,
+			DisplayOrder: i,
+		}
+		if err := db.Create(&member).Error; err != nil {
+			return fmt.Errorf("creating prez market group member %s: %w", name, err)
+		}
+	}
+
+	// Create GenSec Election Group
+	gensecGroup := models.MarketGroup{
+		QuestionTitle:      "Who will be elected BITS Pilani SU GenSec?",
+		Description:        "This market group resolves to the candidate who wins the BITS Pilani Student Union General Secretary election.",
+		GroupType:          "MULTIPLE_CHOICE_BINARY",
+		ProbabilityPolicy:  "INDEPENDENT_BINARY",
+		ResolutionPolicy:   "INDEPENDENT_CHILDREN",
+		LifecycleStatus:    "published",
+		ProposalCost:       0,
+		CreatorUsername:    "admin",
+		StewardUsername:    "admin",
+		ApprovedBy:         "admin",
+		ApprovedAt:         &now,
+		ResolutionDateTime: resolutionTime,
+	}
+
+	if err := db.Create(&gensecGroup).Error; err != nil {
+		return fmt.Errorf("creating gensec market group: %w", err)
+	}
+
+	gensecCandidates := []string{"Candidate X", "Candidate Y", "Candidate Z", "None of the Above"}
+	for i, name := range gensecCandidates {
+		childMarket := models.Market{
+			QuestionTitle:      fmt.Sprintf("Who will be elected BITS Pilani SU GenSec? - %s", name),
+			Description:        fmt.Sprintf("Will %s win the BITS Pilani Student Union General Secretary election?", name),
+			OutcomeType:        "BINARY",
+			ResolutionDateTime: resolutionTime,
+			IsResolved:         false,
+			InitialProbability: 0.5,
+			YesLabel:           "YES",
+			NoLabel:            "NO",
+			LifecycleStatus:    "published",
+			ApprovedBy:         "admin",
+			ApprovedAt:         &now,
+			CreatorUsername:    "admin",
+			StewardUsername:    "admin",
+		}
+		if err := db.Create(&childMarket).Error; err != nil {
+			return fmt.Errorf("creating gensec child market %s: %w", name, err)
+		}
+
+		member := models.MarketGroupMember{
+			GroupID:      gensecGroup.ID,
+			MarketID:     childMarket.ID,
+			AnswerLabel:  name,
+			DisplayOrder: i,
+		}
+		if err := db.Create(&member).Error; err != nil {
+			return fmt.Errorf("creating gensec market group member %s: %w", name, err)
+		}
+	}
+
+	logger.LogInfo("Seed", "SeedMarkets", "BITS Pilani election markets seeded successfully.")
+	return nil
+}
+

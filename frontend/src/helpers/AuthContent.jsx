@@ -45,6 +45,7 @@ const AuthContext = createContext({
     changePasswordNeeded: true, // Default to true until login confirms otherwise
     login: () => {},
     logout: () => {},
+    signup: () => {},
 });
 
 const useAuth = () => useContext(
@@ -145,6 +146,23 @@ const AuthProvider = ({ children }) => {
         }
     };
 
+    const signup = async (username, email, password) => {
+        try {
+            await apiRequest('/v0/signup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, email, password }),
+                fallbackMessage: 'Signup failed. Please try again.',
+            });
+            // Automatically log in after signup
+            return await login(username, password);
+        } catch (error) {
+            console.error('Signup error:', error);
+            throw error;
+        }
+    };
 
     const logout = () => {
         authStorage.clear();
@@ -159,7 +177,7 @@ const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ ...authState, login, logout }}>
+        <AuthContext.Provider value={{ ...authState, login, logout, signup }}>
             {children}
         </AuthContext.Provider>
     );

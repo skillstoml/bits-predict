@@ -108,10 +108,10 @@ func TestSeedHomepage_RendersHTML(t *testing.T) {
 	}
 
 	// Verify HTML contains expected elements from the actual content structure
-	if !strings.Contains(content.HTML, "BrierFoxForecast (BFF)") {
-		t.Errorf("Expected HTML to contain BFF title, got: %s", content.HTML)
+	if !strings.Contains(content.HTML, "BITS Pilani Election Markets") {
+		t.Errorf("Expected HTML to contain BITS Pilani title, got: %s", content.HTML)
 	}
-	if !strings.Contains(content.HTML, "About BFF") {
+	if !strings.Contains(content.HTML, "About BITS Predict") {
 		t.Errorf("Expected HTML to contain About section, got: %s", content.HTML)
 	}
 	if !strings.Contains(content.HTML, `class="bg-gray-800`) {
@@ -170,7 +170,7 @@ func TestSeedHomepage_FallbackContent(t *testing.T) {
 	// Note: The fallback might actually load the real content instead of simple fallback
 	// Check for either fallback content or actual content
 	if !strings.Contains(content.HTML, "Welcome to BrierFoxForecast") &&
-		!strings.Contains(content.HTML, "BrierFoxForecast (BFF)") {
+		!strings.Contains(content.HTML, "BITS Pilani Election Markets") {
 		t.Errorf("Expected rendered fallback or actual HTML content, got: %s", content.HTML)
 	}
 }

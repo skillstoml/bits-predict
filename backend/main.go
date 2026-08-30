@@ -76,6 +76,7 @@ func main() {
 		verify:       migration.VerifyApplied,
 		seedUsers:    seed.SeedUsers,
 		seedHomepage: seed.SeedHomepage,
+		seedMarkets:  seed.SeedMarkets,
 	}); err != nil {
 		if startupMode.Writer {
 			logger.Fatal("startup", "startup database migration failed", err, startupMigrationFailureFields("RunStartupMutations")...)

@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	sqlite "github.com/glebarez/sqlite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -97,7 +98,7 @@ func LoadDBConfigFromEnv() (DBConfig, error) {
 	if cfg.Host == "" {
 		return DBConfig{}, fmt.Errorf("missing DB host (DB_HOST or DBHOST)")
 	}
-	if cfg.User == "" {
+	if cfg.Host != "sqlite" && cfg.User == "" {
 		return DBConfig{}, fmt.Errorf("missing DB user (POSTGRES_USER or DB_USER)")
 	}
 	if cfg.Name == "" {
@@ -154,11 +155,6 @@ func BuildPostgresDSN(cfg DBConfig) (string, error) {
 
 // Open opens a postgres-backed gorm DB using the provided configuration.
 func (f PostgresFactory) Open(cfg DBConfig) (*gorm.DB, error) {
-	dsn, err := BuildPostgresDSN(cfg)
-	if err != nil {
-		return nil, err
-	}
-
 	gormCfg := f.GormConfig
 	if gormCfg == nil {
 		gormCfg = &gorm.Config{}
@@ -172,6 +168,15 @@ func (f PostgresFactory) Open(cfg DBConfig) (*gorm.DB, error) {
 				IgnoreRecordNotFoundError: true,
 			},
 		))
+	}
+
+	if cfg.Host == "sqlite" {
+		return gorm.Open(sqlite.Open(cfg.Name), gormCfg)
+	}
+
+	dsn, err := BuildPostgresDSN(cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	return gorm.Open(postgres.Open(dsn), gormCfg)
