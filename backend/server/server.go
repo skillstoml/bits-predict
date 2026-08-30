@@ -617,6 +617,9 @@ func Start(openAPISpec []byte, swaggerUIFS embed.FS, db *gorm.DB, configService 
 	// Allow BACKEND_PORT to be configured via environment, default to 8080
 	port := os.Getenv("BACKEND_PORT")
 	if port == "" {
+		port = os.Getenv("PORT")
+	}
+	if port == "" {
 		port = "8080"
 	}
 
