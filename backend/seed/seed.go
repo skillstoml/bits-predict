@@ -182,7 +182,13 @@ func SeedMarkets(db *gorm.DB) error {
 		return fmt.Errorf("creating prez market group: %w", err)
 	}
 
-	prezCandidates := []string{"Candidate A", "Candidate B", "Candidate C", "None of the Above"}
+	prezCandidates := []string{
+		"Anirudh Jyothiraditya Panguluri",
+		"Dhaval Rakesh Bothra",
+		"Pulkit Bhardwaj",
+		"Vansh Malik",
+		"None of the Above",
+	}
 	for i, name := range prezCandidates {
 		childMarket := models.Market{
 			QuestionTitle:      fmt.Sprintf("Who will be elected BITS Pilani SU President? - %s", name),
@@ -234,7 +240,13 @@ func SeedMarkets(db *gorm.DB) error {
 		return fmt.Errorf("creating gensec market group: %w", err)
 	}
 
-	gensecCandidates := []string{"Candidate X", "Candidate Y", "Candidate Z", "None of the Above"}
+	gensecCandidates := []string{
+		"Kushal Poosala",
+		"Moksh Goel",
+		"Pratyush Goenka",
+		"Rajay Vardhan Rai",
+		"None of the Above",
+	}
 	for i, name := range gensecCandidates {
 		childMarket := models.Market{
 			QuestionTitle:      fmt.Sprintf("Who will be elected BITS Pilani SU GenSec? - %s", name),
@@ -263,6 +275,134 @@ func SeedMarkets(db *gorm.DB) error {
 		}
 		if err := db.Create(&member).Error; err != nil {
 			return fmt.Errorf("creating gensec market group member %s: %w", name, err)
+		}
+	}
+
+	// Create Day Scholar Representative (D-Rep) Group
+	drepGroup := models.MarketGroup{
+		QuestionTitle:      "Who will be elected BITS Pilani Day Scholar Representative (D-Rep)?",
+		Description:        "This market group resolves to the candidate who wins the BITS Pilani Student Union Day Scholar Representative (D-Rep) election.",
+		GroupType:          "MULTIPLE_CHOICE_BINARY",
+		ProbabilityPolicy:  "INDEPENDENT_BINARY",
+		ResolutionPolicy:   "INDEPENDENT_CHILDREN",
+		LifecycleStatus:    "published",
+		ProposalCost:       0,
+		CreatorUsername:    "admin",
+		StewardUsername:    "admin",
+		ApprovedBy:         "admin",
+		ApprovedAt:         &now,
+		ResolutionDateTime: resolutionTime,
+	}
+
+	if err := db.Create(&drepGroup).Error; err != nil {
+		return fmt.Errorf("creating drep market group: %w", err)
+	}
+
+	drepCandidates := []string{
+		"Krishna Sharma",
+		"Mohit Singh Bhati",
+		"Vansh Lahora",
+		"None of the Above",
+	}
+	for i, name := range drepCandidates {
+		childMarket := models.Market{
+			QuestionTitle:      fmt.Sprintf("Who will be elected BITS Pilani Day Scholar Representative (D-Rep)? - %s", name),
+			Description:        fmt.Sprintf("Will %s win the BITS Pilani Day Scholar Representative election?", name),
+			OutcomeType:        "BINARY",
+			ResolutionDateTime: resolutionTime,
+			IsResolved:         false,
+			InitialProbability: 0.5,
+			YesLabel:           "YES",
+			NoLabel:            "NO",
+			LifecycleStatus:    "published",
+			ApprovedBy:         "admin",
+			ApprovedAt:         &now,
+			CreatorUsername:    "admin",
+			StewardUsername:    "admin",
+		}
+		if err := db.Create(&childMarket).Error; err != nil {
+			return fmt.Errorf("creating drep child market %s: %w", name, err)
+		}
+
+		member := models.MarketGroupMember{
+			GroupID:      drepGroup.ID,
+			MarketID:     childMarket.ID,
+			AnswerLabel:  name,
+			DisplayOrder: i,
+		}
+		if err := db.Create(&member).Error; err != nil {
+			return fmt.Errorf("creating drep market group member %s: %w", name, err)
+		}
+	}
+
+	// Create H-Rep Groups for each Bhawan
+	hrepCandidates := map[string][]string{
+		"Ashok Bhawan":       {"Aryam Aman", "Kshitij Maheshwari"},
+		"Bhagirath Bhawan":   {"Anurodh Sahu", "Ishan Garg", "Omkar Raju Thote"},
+		"Budh Bhawan":        {"Ansh Agarwal"},
+		"CVR Bhawan":         {"Arin Samant", "Shreyash Jha"},
+		"Gandhi Bhawan":      {"Arsh Sood", "Kritanshu Jaiswal"},
+		"Krishna Bhawan":     {"Anuj Miglani", "Daksh Singhal"},
+		"Malviya Bhawan":     {"Ajay Sehrawat"},
+		"Meera Bhawan":       {"Bhoomika Santosh Avadhani"},
+		"Ram Bhawan":         {"Atrey Raj Singh", "Laksh Khetrapal", "Rudra Mohit"},
+		"Rana Pratap Bhawan": {"Aryan Nair", "Nishque Sanodiya", "Shrey Dhorajiya"},
+		"Shankar Bhawan":     {"Utsav Relan"},
+		"Vishwakarma Bhawan": {"Anagh Kaushik", "Avi Dubey", "Priyanshu Satpathy"},
+		"Vyas Bhawan":        {"Arnav Jain", "Jaideep Rankawat", "Manas Agrawal", "Raman Gupta", "Shashank Bansal", "Vinayak Raj"},
+	}
+
+	for bhawan, candidates := range hrepCandidates {
+		bhawanGroup := models.MarketGroup{
+			QuestionTitle:      fmt.Sprintf("Who will be elected H-Rep for %s?", bhawan),
+			Description:        fmt.Sprintf("This market group resolves to the candidate who wins the BITS Pilani Hostel Representative (H-Rep) election for %s.", bhawan),
+			GroupType:          "MULTIPLE_CHOICE_BINARY",
+			ProbabilityPolicy:  "INDEPENDENT_BINARY",
+			ResolutionPolicy:   "INDEPENDENT_CHILDREN",
+			LifecycleStatus:    "published",
+			ProposalCost:       0,
+			CreatorUsername:    "admin",
+			StewardUsername:    "admin",
+			ApprovedBy:         "admin",
+			ApprovedAt:         &now,
+			ResolutionDateTime: resolutionTime,
+		}
+
+		if err := db.Create(&bhawanGroup).Error; err != nil {
+			return fmt.Errorf("creating H-Rep market group for %s: %w", bhawan, err)
+		}
+
+		// Append "None of the Above"
+		candidatesWithNone := append(candidates, "None of the Above")
+		for i, name := range candidatesWithNone {
+			childMarket := models.Market{
+				QuestionTitle:      fmt.Sprintf("Who will be elected H-Rep for %s? - %s", bhawan, name),
+				Description:        fmt.Sprintf("Will %s win the BITS Pilani H-Rep election for %s?", name, bhawan),
+				OutcomeType:        "BINARY",
+				ResolutionDateTime: resolutionTime,
+				IsResolved:         false,
+				InitialProbability: 0.5,
+				YesLabel:           "YES",
+				NoLabel:            "NO",
+				LifecycleStatus:    "published",
+				ApprovedBy:         "admin",
+				ApprovedAt:         &now,
+				CreatorUsername:    "admin",
+				StewardUsername:    "admin",
+			}
+			if err := db.Create(&childMarket).Error; err != nil {
+				return fmt.Errorf("creating H-Rep child market %s for %s: %w", name, bhawan, err)
+			}
+
+			member := models.MarketGroupMember{
+				GroupID:      bhawanGroup.ID,
+				MarketID:     childMarket.ID,
+				AnswerLabel:  name,
+				DisplayOrder: i,
+			}
+			if err := db.Create(&member).Error; err != nil {
+				return fmt.Errorf("creating H-Rep market group member %s for %s: %w", name, bhawan, err)
+			}
 		}
 	}
 
