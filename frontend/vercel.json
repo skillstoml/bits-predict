@@ -2,8 +2,8 @@
   "outputDirectory": "build",
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://psychic-fishstick-7vwvxgjpv65w3pp9-8080.app.github.dev/:path*"
+      "source": "/v0/:path*",
+      "destination": "https://psychic-fishstick-7vwvxgjpv65w3pp9-8080.app.github.dev/v0/:path*"
     },
     {
       "source": "/(.*)",
