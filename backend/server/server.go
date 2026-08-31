@@ -409,6 +409,7 @@ func registerApplicationRoutes(router *mux.Router, db *gorm.DB, configService co
 	router.HandleFunc("/v0/home", handlers.HomeHandler).Methods("GET")
 	router.Handle("/v0/login", loginSecurityMiddleware(authsvc.LoginHandler(usersRepo, requestSecurityService, securityConfig.JWTSigningKey))).Methods("POST")
 	router.Handle("/v0/signup", loginSecurityMiddleware(authsvc.SignupHandler(db, configService))).Methods("POST")
+	router.Handle("/v0/auth/google", loginSecurityMiddleware(authsvc.GoogleLoginHandler(db, configService, securityConfig.JWTSigningKey))).Methods("POST")
 
 	// application setup information
 	router.Handle("/v0/setup", securityMiddleware(http.HandlerFunc(setuphandlers.GetSetupHandler(container.GetConfigService())))).Methods("GET")

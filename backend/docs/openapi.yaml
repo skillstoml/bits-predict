@@ -455,6 +455,62 @@ paths:
               schema:
                 $ref: '#/components/schemas/ReasonResponse'
 
+  /v0/auth/google:
+    post:
+      tags: [Auth]
+      operationId: googleLogin
+      summary: Login or Register with Google OAuth
+      description: >
+        Receives a verified Google ID token credential, validates it, and logs the user in.
+        Registers the user automatically if they don't already exist and their email is verified and belongs to the BITS Pilani domain.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [credential]
+              properties:
+                credential:
+                  type: string
+                  description: Google ID token (JWT)
+      responses:
+        '200':
+          description: Successful authentication.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  username:
+                    type: string
+                  usertype:
+                    type: string
+                  moderatorStatus:
+                    type: string
+                  mustChangePassword:
+                    type: boolean
+        '400':
+          description: Invalid token payload or domain restriction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReasonResponse'
+        '401':
+          description: Verification or signature failure.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReasonResponse'
+        '500':
+          description: Internal server or configuration error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReasonResponse'
+
   /v0/home:
     get:
       tags: [Config]

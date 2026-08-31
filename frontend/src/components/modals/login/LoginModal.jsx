@@ -1,18 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useHistory } from 'react-router-dom';
 import { PersonInput, LockInput } from '../../inputs/InputBar';
 import SiteButton from '../../buttons/SiteButtons';
 import { useAuth } from '../../../helpers/AuthContent';
+import { GOOGLE_CLIENT_ID } from '../../../config';
 
 const LoginModal = ({ isOpen, onClose, onLogin, redirectAfterLogin }) => {
-    const { signup } = useAuth();
+    const { signup, loginWithGoogle } = useAuth();
     const [isSignUp, setIsSignUp] = useState(false);
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const history = useHistory();
+
+    const handleGoogleLoginSuccess = async (response) => {
+        setError('');
+        try {
+            const loginResult = await loginWithGoogle(response.credential);
+            if (loginResult?.success) {
+                onClose();
+                history.push(getPostLoginDestination(loginResult.mustChangePassword));
+            }
+        } catch (authError) {
+            console.error('Google Auth error:', authError);
+            setError(authError.message || 'Google authentication failed.');
+        }
+    };
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const id = 'google-gsi-client';
+        let script = document.getElementById(id);
+        if (!script) {
+            script = document.createElement('script');
+            script.src = 'https://accounts.google.com/gsi/client';
+            script.id = id;
+            script.async = true;
+            script.defer = true;
+            document.body.appendChild(script);
+        }
+
+        const initializeGoogleSignIn = () => {
+            if (!GOOGLE_CLIENT_ID) {
+                console.warn("GOOGLE_CLIENT_ID is not configured in client environment");
+                return;
+            }
+
+            if (window.google) {
+                window.google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    callback: handleGoogleLoginSuccess,
+                });
+                window.google.accounts.id.renderButton(
+                    document.getElementById('google-signin-btn'),
+                    { theme: 'outline', size: 'large', width: 272 }
+                );
+            }
+        };
+
+        script.onload = () => {
+            initializeGoogleSignIn();
+        };
+
+        if (window.google) {
+            initializeGoogleSignIn();
+        }
+    }, [isOpen]);
 
     const getPostLoginDestination = (mustChangePassword) => {
         if (mustChangePassword) {
@@ -95,6 +151,19 @@ const LoginModal = ({ isOpen, onClose, onLogin, redirectAfterLogin }) => {
                     <div className="flex flex-col gap-3 mt-4">
                         <SiteButton type="submit">{isSignUp ? 'Sign Up' : 'Login'}</SiteButton>
                         
+                        {GOOGLE_CLIENT_ID && (
+                            <>
+                                <div className="flex items-center my-1">
+                                    <hr className="flex-1 border-gray-700" />
+                                    <span className="px-2 text-[10px] text-gray-400 font-semibold uppercase tracking-wider">OR</span>
+                                    <hr className="flex-1 border-gray-700" />
+                                </div>
+                                <div className="w-full flex justify-center mb-1">
+                                    <div id="google-signin-btn"></div>
+                                </div>
+                            </>
+                        )}
+
                         <button
                             type="button"
                             onClick={() => {

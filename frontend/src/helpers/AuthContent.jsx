@@ -46,6 +46,7 @@ const AuthContext = createContext({
     login: () => {},
     logout: () => {},
     signup: () => {},
+    loginWithGoogle: () => {},
 });
 
 const useAuth = () => useContext(
@@ -164,6 +165,33 @@ const AuthProvider = ({ children }) => {
         }
     };
 
+    const loginWithGoogle = async (credential) => {
+        try {
+            const authData = await apiRequest('/v0/auth/google', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ credential }),
+                fallbackMessage: 'Google login failed. Please try again.',
+            });
+
+            authStorage.saveLogin(authData);
+            setAuthState({
+                isLoggedIn: true,
+                token: authData.token,
+                username: authData.username,
+                usertype: authData.usertype,
+                moderatorStatus: authData.moderatorStatus,
+                changePasswordNeeded: authData.mustChangePassword,
+            });
+            return { success: true, mustChangePassword: authData.mustChangePassword };
+        } catch (error) {
+            console.error('Google login error:', error);
+            throw error;
+        }
+    };
+
     const logout = () => {
         authStorage.clear();
         setAuthState({
@@ -177,7 +205,7 @@ const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ ...authState, login, logout, signup }}>
+        <AuthContext.Provider value={{ ...authState, login, logout, signup, loginWithGoogle }}>
             {children}
         </AuthContext.Provider>
     );

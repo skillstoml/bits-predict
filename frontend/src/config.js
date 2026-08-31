@@ -7,3 +7,4 @@ const getEnvValue = (key, fallback) => {
 
 export const DOMAIN_URL = getEnvValue('DOMAIN_URL', typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
 export const API_URL = getEnvValue('API_URL', typeof window !== 'undefined' ? window.location.origin : 'http://localhost');
+export const GOOGLE_CLIENT_ID = getEnvValue('GOOGLE_CLIENT_ID', import.meta.env.VITE_GOOGLE_CLIENT_ID || '');
